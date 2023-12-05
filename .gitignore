@@ -1,0 +1,6 @@
+target/
+.DS_Store
+.idea/
+.bsp/
+project/target/
+project/project/
