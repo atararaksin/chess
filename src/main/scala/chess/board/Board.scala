@@ -3,21 +3,27 @@ package chess.board
 import chess.MoveHelpers
 import chess.piece.Piece
 
-case class Board(squares: Vector[Option[Piece]],
+case class Board(squares: Array[Option[Piece]],
                  isWhitesTurn: Boolean,
                  white: PlayerState,
                  black: PlayerState) {
 
   lazy val encoding: String = {
     val turnChar = if (isWhitesTurn) 'w' else 'b'
-    val chars = squares.map(_.map(_.reprChar).getOrElse(' '))
-    new String(chars.toArray) + turnChar
+    val chars: Array[Char] = new Array(65)
+    for (i <- 0 to 63) {
+      val piece = squares(i)
+      if (piece.isDefined) chars(i) = squares(i).get.reprChar
+      else chars(i) = ' '
+    }
+    chars(64) = turnChar
+    new String(chars)
   }
 
   lazy val nextMoves: List[(Piece, Square)] = {
     val player = if (isWhitesTurn) white else black
     for {
-      piece <- player.pieces.toList
+      piece <- player.pieces
       square <- piece.nextMoves(this)
     } yield (piece, square)
   }
@@ -53,8 +59,9 @@ case class Board(squares: Vector[Option[Piece]],
       case None =>
     }
 
-    val newSquares = squares.updated(y * 8 + x, Some(updatedPiece))
-      .updated(piece.y * 8 + piece.x, None)
+    val newSquares = squares.clone
+    newSquares(y * 8 + x) = Some(updatedPiece)
+    newSquares(piece.y * 8 + piece.x) = None
 
     this.copy(
       squares = newSquares, isWhitesTurn = !isWhitesTurn, white = newWhite, black = newBlack
@@ -85,7 +92,7 @@ object Board {
       if (char.isDigit) List.fill(char.toString.toInt)(None)
       else List(Some(char))
 
-    val piecesChars = squaresRows.mkString.toCharArray.toVector.flatMap(readPieceChar)
+    val piecesChars = squaresRows.mkString.toCharArray.flatMap(readPieceChar)
     val squares = piecesChars.zipWithIndex.map {
       case (Some(char), i) => Some(Piece.fromChar(char, i % 8, i / 8))
       case (None, _) => None
@@ -99,18 +106,18 @@ object Board {
     val canBlackCastleK = castle.contains('k')
     val canBlackCastleQ = castle.contains('q')
 
-    val whitePieces = squares.flatten.filter(_.isWhite).toSet
-    val blackPieces = squares.flatten.filterNot(_.isWhite).toSet
+    val whitePieces = squares.flatten.filter(_.isWhite).toList
+    val blackPieces = squares.flatten.filterNot(_.isWhite).toList
 
     val white = PlayerState(
       isWhite = true, whitePieces,
       canCastleK = canWhiteCastleK, canCastleQ = canWhiteCastleQ,
-      score = whitePieces.toList.map(_.value).sum
+      score = whitePieces.map(_.value).sum
     )
     val black = PlayerState(
       isWhite = false, blackPieces,
       canCastleK = canBlackCastleK, canCastleQ = canBlackCastleQ,
-      score = blackPieces.toList.map(_.value).sum
+      score = blackPieces.map(_.value).sum
     )
 
     Board(

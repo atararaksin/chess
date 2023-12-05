@@ -3,7 +3,7 @@ package chess.board
 import chess.piece.{King, Piece}
 
 case class PlayerState(isWhite: Boolean,
-                       pieces: Set[Piece],
+                       pieces: List[Piece],
                        canCastleK: Boolean,
                        canCastleQ: Boolean,
                        score: Int) {
@@ -11,7 +11,7 @@ case class PlayerState(isWhite: Boolean,
     this.copy(pieces = pieces.filterNot(_ eq piece), score = score - piece.value)
 
   def movePiece(piece: Piece, updatedPiece: Piece): PlayerState = {
-    val newPieces = pieces.filterNot(_ eq piece) + updatedPiece
+    val newPieces = updatedPiece::pieces.filterNot(_ eq piece)
     this.copy(pieces = newPieces)
   }
 
