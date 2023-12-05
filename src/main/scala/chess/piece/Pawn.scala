@@ -16,26 +16,30 @@ case class Pawn(override val x: Int,
     val fromX = x
     val fromY = y
 
-    val yInc = if (isWhite) -1 else 1
+    if (isWhite && fromY == 0 || !isWhite && fromY == 7) Nil
+    else {
+      val yInc = if (isWhite) -1 else 1
+      val isStartPos = (isWhite && fromY == 6) || (!isWhite && fromY == 1)
 
-    val isStartPos = (isWhite && fromY == 6) || (!isWhite && fromY == 1)
+      var moves: List[Square] = Nil
+      val yForward = fromY + yInc
+      if (board.getPiece(fromX, yForward).isEmpty) {
+        moves ::= Square(fromX, yForward)
+        if (isStartPos && board.getPiece(fromX, yForward + yInc).isEmpty) {
+          moves ::= Square(fromX, yForward + yInc)
+        }
+      }
+      val xLeft = fromX - 1
+      if (xLeft >= 0 && board.getPiece(xLeft, yForward).exists(_.isWhite != isWhite)) {
+        moves ::= Square(xLeft, yForward)
+      }
+      val xRight = fromX + 1
+      if (xRight <= 7 && board.getPiece(xRight, yForward).exists(_.isWhite != isWhite)) {
+        moves ::= Square(xRight, yForward)
+      }
 
-    def isVacantSquare(x: Int, y: Int) =
-      x <= 7 && x >= 0 && y <= 7 && y >= 0 && board.getPiece(x, y).isEmpty
-
-    def isEnemySquare(x: Int, y: Int) =
-      x <= 7 && x >= 0 && y <= 7 && y >= 0 && board.getPiece(x, y).exists(_.isWhite != isWhite)
-
-    List(
-      if (isVacantSquare(fromX, fromY + yInc)) Some(Square(fromX, fromY + yInc))
-      else None,
-      if (isStartPos && isVacantSquare(fromX, fromY + yInc) && isVacantSquare(fromX, fromY + 2 * yInc)) Some(Square(fromX, fromY + 2 * yInc))
-      else None,
-      if (isEnemySquare(fromX - 1, fromY + yInc)) Some(Square(fromX - 1, fromY + yInc))
-      else None,
-      if (isEnemySquare(fromX + 1, fromY + yInc)) Some(Square(fromX + 1, fromY + yInc))
-      else None
-    ).flatten
+      moves
+    }
   }
 
 }

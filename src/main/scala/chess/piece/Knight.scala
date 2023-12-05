@@ -14,20 +14,37 @@ case class Knight(override val x: Int,
     this.copy(x = x, y = y)
 
   override def nextMoves(board: Board): List[Square] = {
-    for {
-      (incX, incY) <- Knight.knightIncs
-      toX = x + incX
-      toY = y + incY
-      if toX <= 7 && toX >= 0 && toY <= 7 && toY >= 0
-      if !board.getPiece(toX, toY).exists(_.isWhite == isWhite)
-    } yield Square(toX, toY)
-  }
-}
+    var moves: List[Square] = Nil
 
-object Knight {
-  val knightIncs: List[(Int, Int)] = for {
-    (incX, incY) <- List((1, 2), (2, 1))
-    multX <- List(1, -1)
-    multY <- List(1, -1)
-  } yield (incX * multX, incY * multY)
+    var toY = y - 1
+    var toX = x - 2
+    if (toY >= 0) {
+      if (toX >= 0 && !board.getPiece(toX, toY).exists(_.isWhite == isWhite)) moves ::= Square(toX, toY)
+      toX = x + 2
+      if (toX <= 7 && !board.getPiece(toX, toY).exists(_.isWhite == isWhite)) moves ::= Square(toX, toY)
+    }
+    toY = y - 2
+    toX = x - 1
+    if (toY >= 0) {
+      if (toX >= 0 && !board.getPiece(toX, toY).exists(_.isWhite == isWhite)) moves ::= Square(toX, toY)
+      toX = x + 1
+      if (toX <= 7 && !board.getPiece(toX, toY).exists(_.isWhite == isWhite)) moves ::= Square(toX, toY)
+    }
+    toY = y + 2
+    toX = x - 1
+    if (toY <= 7) {
+      if (toX >= 0 && !board.getPiece(toX, toY).exists(_.isWhite == isWhite)) moves ::= Square(toX, toY)
+      toX = x + 1
+      if (toX <= 7 && !board.getPiece(toX, toY).exists(_.isWhite == isWhite)) moves ::= Square(toX, toY)
+    }
+    toY = y + 1
+    toX = x - 2
+    if (toY <= 7) {
+      if (toX >= 0 && !board.getPiece(toX, toY).exists(_.isWhite == isWhite)) moves ::= Square(toX, toY)
+      toX = x + 2
+      if (toX <= 7 && !board.getPiece(toX, toY).exists(_.isWhite == isWhite)) moves ::= Square(toX, toY)
+    }
+
+    moves
+  }
 }
