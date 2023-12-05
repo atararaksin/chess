@@ -2,15 +2,15 @@ package chess
 
 import board.Board
 
+import scala.annotation.tailrec
+
 object Main {
   //var fen = "4k3/8/3p4/2n1q1r1/8/3PPPN1/2QB4/4KB2 w - - 0 1"
   //var fen = "4k3/8/3p4/2n1q1r1/5P2/3PP1N1/2QB4/4KB2 b - - 0 1"
-  var fen = "7r/4bkp1/4q2p/3N4/1P1Q1p2/P6P/2P1PP1P/4K1NR w K - 0 1"
+  var fen = "7r/4q2k/7p/PP4p1/2P5/5Q1P/4PPKP/6NR w - - 0 1"
 
   def main(args: Array[String]): Unit = {
     if (args.length > 0) fen = args(0)
-    val targetDepth = if (args.length > 1) args(1).toInt else 3
-    val depthHardLimit = if (args.length > 2) args(2).toInt else 8
 
     val board = Board.loadFen(fen)
 
@@ -19,19 +19,35 @@ object Main {
 
     println("")
 
-    findBestMove(board, targetDepth, depthHardLimit)
+      findBestMove(board)
 //    printNextMoves(board)
   }
 
-  def findBestMove(board: Board, targetDepth: Int, depthHardLimit: Int): Unit = {
+  def findBestMove(board: Board): Unit = {
     val mult = if (board.isWhitesTurn) 1 else -1
     val startScore = mult * (board.white.score - board.black.score)
 
     println(s"startScore: $startScore (white: ${board.white.score}, black: ${board.black.score})")
 
     val bestMove = new BestMove()
-    val game = bestMove.findBestMove(board, targetDepth, depthHardLimit)
 
+    @tailrec
+    def tryWithDepth(targetDepth: Int): Game = {
+      println(s"Trying with targetDepth=$targetDepth")
+      val game = bestMove.findBestMove(board, targetDepth, targetDepth + 5)
+      println(s"Got result in ${bestMove.elapsedMillis} millis: ${game.moves.head}")
+
+      if (targetDepth > 9) game
+      else if (bestMove.elapsedMillis > 3500) game
+      else {
+        val newTargetDepth = targetDepth + 1
+        tryWithDepth(newTargetDepth)
+      }
+    }
+
+    val game = tryWithDepth(1)
+
+    println("")
     println(s"endScore:   ${game.score}")
     val scoreDiff = game.score - mult * (board.white.score - board.black.score)
     println(s"scoreDiff:  $scoreDiff")
