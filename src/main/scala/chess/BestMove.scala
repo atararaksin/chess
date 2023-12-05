@@ -77,17 +77,23 @@ class BestMove {
           if (moves.isEmpty) mate(board, asWhite) // No legal moves. We already checked for stalemate above, so has to be mate.
           else {
             val filteredMoves = if (depth >= targetDepth) moves.filter(_._4) else moves
+
+            // We/they can also choose not to do one of the filteredMoves (attacking), if there were other options
+            val gameStoppedRightHere = if (depth >= targetDepth && filteredMoves.length < moves.length) {
+              gameEnd(board, asWhite) :: Nil
+            } else Nil
+
             val movesPar = if (depth >= parallelUntilDepth) filteredMoves else filteredMoves.par
             val games = movesPar.map { case (piece, square, newBoard, _) =>
               totalMovesMade.incrementAndGet()
               val game = bestGame(newBoard, depth + 1, asWhite, targetDepth, depthHardLimit)
               game.copy(moves = MoveHelpers.encodeMove(piece, square) :: game.moves)
-            }
+            } ++ gameStoppedRightHere
 
             if (games.isEmpty) {
               if (depth >= targetDepth) gameEnd(board, asWhite)
               else sys.error("This should never have happened")
-            }else if (asWhite == board.isWhitesTurn) games.maxBy(g => g.score * 1000 - g.moves.length) //use shortest path to this score
+            } else if (asWhite == board.isWhitesTurn) games.maxBy(g => g.score * 1000 - g.moves.length) //use shortest path to this score
             else games.minBy(g => g.score * 1000 + g.moves.length) //use shortest path to this score
           }
         }

@@ -5,12 +5,12 @@ import board.Board
 object Main {
   //var fen = "4k3/8/3p4/2n1q1r1/8/3PPPN1/2QB4/4KB2 w - - 0 1"
   //var fen = "4k3/8/3p4/2n1q1r1/5P2/3PP1N1/2QB4/4KB2 b - - 0 1"
-  var fen = "r2qkbnr/1pp1pppp/p1n1b3/8/2p5/1PNPP3/P4PPP/R1BQKBNR w KQkq - 0 1"
+  var fen = "7r/4bkp1/4q2p/3N4/1P1Q1p2/P6P/2P1PP1P/4K1NR w K - 0 1"
 
   def main(args: Array[String]): Unit = {
     if (args.length > 0) fen = args(0)
-    val targetDepth = if (args.length > 1) args(1).toInt else 2
-    val depthHardLimit = if (args.length > 2) args(2).toInt else 12
+    val targetDepth = if (args.length > 1) args(1).toInt else 3
+    val depthHardLimit = if (args.length > 2) args(2).toInt else 8
 
     val board = Board.loadFen(fen)
 
