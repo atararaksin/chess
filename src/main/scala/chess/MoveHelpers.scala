@@ -6,36 +6,65 @@ import chess.piece.Piece
 import scala.annotation.tailrec
 
 object MoveHelpers {
-  private val straightIncs = List((0, 1), (0, -1), (1, 0), (-1, 0))
-  private val diagonalIncs = List((1, 1), (1, -1), (-1, 1), (-1, -1))
   private val xChars = "abcdefgh".toCharArray
 
-  def straightMoves(board: Board, piece: Piece): List[Square] =
-    consecutiveMoves(board, piece, straightIncs)
+  def straightMoves(board: Board, piece: Piece): List[Square] = {
+    var moves = consecutiveMoves(board, piece, Nil, 0, 1)
+    moves = consecutiveMoves(board, piece, moves, 0, -1)
+    moves = consecutiveMoves(board, piece, moves, 1, 0)
+    moves = consecutiveMoves(board, piece, moves, -1, 0)
+    moves
+  }
 
-  def diagonalMoves(board: Board, piece: Piece): List[Square] =
-    consecutiveMoves(board, piece, diagonalIncs)
+  def diagonalMoves(board: Board, piece: Piece): List[Square] = {
+    var moves = consecutiveMoves(board, piece, Nil, 1, 1)
+    moves = consecutiveMoves(board, piece, moves, 1, -1)
+    moves = consecutiveMoves(board, piece, moves, -1, 1)
+    moves = consecutiveMoves(board, piece, moves, -1, -1)
+    moves
+  }
+
+  def straightAndDiagonalMoves(board: Board, piece: Piece): List[Square] = {
+    var moves = consecutiveMoves(board, piece, Nil, 0, 1)
+    moves = consecutiveMoves(board, piece, moves, 0, -1)
+    moves = consecutiveMoves(board, piece, moves, 1, 0)
+    moves = consecutiveMoves(board, piece, moves, -1, 0)
+
+    moves = consecutiveMoves(board, piece, moves, 1, 1)
+    moves = consecutiveMoves(board, piece, moves, 1, -1)
+    moves = consecutiveMoves(board, piece, moves, -1, 1)
+    moves = consecutiveMoves(board, piece, moves, -1, -1)
+    moves
+  }
 
   private def consecutiveMoves(board: Board,
                                piece: Piece,
-                               incs: List[(Int, Int)]): List[Square] = {
-    @tailrec
-    def loop(acc: List[Square], x: Int, y: Int, xInc: Int, yInc: Int): List[Square] = {
-      val toX = x + xInc
-      val toY = y + yInc
+                               acc: List[Square],
+                               xInc: Int, yInc: Int): List[Square] = {
+    var x = piece.x
+    var y = piece.y
 
-      if (toX > 7 || toX < 0 || toY > 7 || toY < 0) acc
-      else board.getPiece(toX, toY) match {
-        case None => loop(Square(toX, toY)::acc, toX, toY, xInc, yInc)
-        case Some(other) if other.isWhite == piece.isWhite => acc
-        case _ => Square(toX, toY)::acc
+    var shouldStop = false
+
+    var varAcc = acc
+
+    do {
+      x += xInc
+      y += yInc
+      if (x < 0 || y < 0 || x > 7 || y > 7) {
+        shouldStop = true
+      } else {
+        val other = board.getPiece(x, y)
+        if (other.isDefined) {
+          shouldStop = true
+          if (other.get.isWhite != piece.isWhite) varAcc ::= Square(x, y)
+        } else {
+          varAcc ::= Square(x, y)
+        }
       }
-    }
+    } while (!shouldStop)
 
-    for {
-      (xInc, yInc) <- incs
-      square <- loop(Nil, piece.x, piece.y, xInc, yInc)
-    } yield square
+    varAcc
   }
 
   def isSquareUnderAttack(x: Int, y: Int, availableOpponentMoves: List[(Piece, Square)]): Boolean = {

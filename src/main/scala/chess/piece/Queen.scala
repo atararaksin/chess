@@ -14,5 +14,5 @@ case class Queen(override val x: Int,
     this.copy(x = x, y = y)
 
   override def nextMoves(board: Board): List[Square] =
-    MoveHelpers.diagonalMoves(board, this) ++ MoveHelpers.straightMoves(board, this)
+    MoveHelpers.straightAndDiagonalMoves(board, this)
 }
