@@ -5,9 +5,9 @@ import board.Board
 import scala.annotation.tailrec
 
 object Main {
-  //var fen = "4k3/8/3p4/2n1q1r1/8/3PPPN1/2QB4/4KB2 w - - 0 1"
-  //var fen = "4k3/8/3p4/2n1q1r1/5P2/3PP1N1/2QB4/4KB2 b - - 0 1"
-  var fen = "7r/4q2k/7p/PP4p1/2P5/5Q1P/4PPKP/6NR w - - 0 1"
+  var fen = "4k3/8/3p4/2n1q1r1/8/3PPPN1/2QB4/4KB2 w - - 0 1"
+//  var fen = "4k3/8/3p4/2n1q1r1/5P2/3PP1N1/2QB4/4KB2 b - - 0 1"
+//  var fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
   def main(args: Array[String]): Unit = {
     if (args.length > 0) fen = args(0)
@@ -15,7 +15,6 @@ object Main {
     val board = Board.loadFen(fen)
 
     board.print()
-    println(new String(board.encoding.toArray))
 
     println("")
 
@@ -33,12 +32,13 @@ object Main {
 
     @tailrec
     def tryWithDepth(targetDepth: Int): Game = {
+      println("")
       println(s"Trying with targetDepth=$targetDepth")
-      val game = bestMove.findBestMove(board, targetDepth, targetDepth + 5)
+      val game = bestMove.findBestMove(board, targetDepth, targetDepth + 6)
       println(s"Got result in ${bestMove.elapsedMillis} millis: ${game.moves.head}")
 
       if (targetDepth > 9) game
-      else if (bestMove.elapsedMillis > 3500) game
+      else if (bestMove.elapsedMillis > 3000) game
       else {
         val newTargetDepth = targetDepth + 1
         tryWithDepth(newTargetDepth)

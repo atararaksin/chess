@@ -4,6 +4,8 @@ import chess.board.Board
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
+import scala.collection.GenSeq
+import scala.util.Random
 
 case class Game(score: Int, moves: List[String])
 case class CachedGame(cachedAtDepth: Int, game: Game)
@@ -55,6 +57,24 @@ class BestMove {
   private def cachedGame(boardEncoding: String, depth: Int): Option[CachedGame] =
     Option(visited.get(boardEncoding)).filter(_.cachedAtDepth <= depth)
 
+  private def bestGameByMaterialAndPosition(games: GenSeq[(Board, Game)], asWhite: Boolean): Game = {
+    val maxMaterialScore = games.map(_._2.score).max
+    val gamesWithBestMaterialScore = games.filter(_._2.score == maxMaterialScore)
+    val gamesAndPositionScores = gamesWithBestMaterialScore.map { case (board, game) =>
+      (game, BestPosition.positionScore(board, asWhite))
+    }
+    val bestScore = gamesAndPositionScores.map(_._2).max
+    val worstScore = gamesAndPositionScores.map(_._2).min
+    println(s"Got ${gamesWithBestMaterialScore.size} games with the same material score.")
+    println(s"Choosing the best game by position score, ranging from $worstScore to $bestScore.")
+    Random.shuffle(gamesAndPositionScores.filter(_._2 == bestScore).toList).head._1
+  }
+
+  private def bestGameByMaterialAndDepth(games: GenSeq[(Board, Game)], asWhite: Boolean, isWhitesTurn: Boolean): Game = {
+    if (asWhite == isWhitesTurn) games.maxBy(g => g._2.score * 1000 - g._2.moves.length)._2
+    else games.minBy(g => g._2.score * 1000 + g._2.moves.length)._2
+  }
+
   def bestGame(board: Board, depth: Int, asWhite: Boolean, targetDepth: Int, depthHardLimit: Int): Game = {
     cachedGame(board.encoding, depth) match {
       case Some(cachedGame) =>
@@ -80,21 +100,22 @@ class BestMove {
 
             // We/they can also choose not to do one of the filteredMoves (attacking), if there were other options
             val gameStoppedRightHere = if (depth >= targetDepth && filteredMoves.length < moves.length) {
-              gameEnd(board, asWhite) :: Nil
+              (board, gameEnd(board, asWhite)) :: Nil
             } else Nil
 
             val movesPar = if (depth >= parallelUntilDepth) filteredMoves else filteredMoves.par
             val games = movesPar.map { case (piece, square, newBoard, _) =>
               totalMovesMade.incrementAndGet()
               val game = bestGame(newBoard, depth + 1, asWhite, targetDepth, depthHardLimit)
-              game.copy(moves = MoveHelpers.encodeMove(piece, square) :: game.moves)
+              (newBoard, game.copy(moves = MoveHelpers.encodeMove(piece, square) :: game.moves))
             } ++ gameStoppedRightHere
 
             if (games.isEmpty) {
               if (depth >= targetDepth) gameEnd(board, asWhite)
               else sys.error("This should never have happened")
-            } else if (asWhite == board.isWhitesTurn) games.maxBy(g => g.score * 1000 - g.moves.length) //use shortest path to this score
-            else games.minBy(g => g.score * 1000 + g.moves.length) //use shortest path to this score
+            } else if (depth == 0) {
+              bestGameByMaterialAndPosition(games, asWhite)
+            } else bestGameByMaterialAndDepth(games, asWhite, board.isWhitesTurn)
           }
         }
 

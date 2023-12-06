@@ -42,4 +42,26 @@ case class Pawn(override val x: Int,
     }
   }
 
+  override def controlledSquares(board: Board): List[Square] = {
+    val fromX = x
+    val fromY = y
+
+    if (isWhite && fromY == 0 || !isWhite && fromY == 7) Nil
+    else {
+      var moves: List[Square] = Nil
+      val yInc = if (isWhite) -1 else 1
+      val yForward = fromY + yInc
+      val xLeft = fromX - 1
+      if (xLeft >= 0 && board.getPiece(xLeft, yForward).exists(_.isWhite != isWhite)) {
+        moves ::= Square(xLeft, yForward)
+      }
+      val xRight = fromX + 1
+      if (xRight <= 7 && board.getPiece(xRight, yForward).exists(_.isWhite != isWhite)) {
+        moves ::= Square(xRight, yForward)
+      }
+
+      moves
+    }
+  }
+
 }

@@ -15,6 +15,9 @@ abstract class Piece {
 
   def nextMoves(board: Board): List[Square] =
     List()
+
+  def controlledSquares(board: Board): List[Square] =
+    nextMoves(board)
 }
 
 object Piece {
