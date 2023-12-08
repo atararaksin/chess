@@ -4,7 +4,7 @@ import chess.MoveHelpers
 import chess.piece.Piece
 
 case class Board(squares: Array[Option[Int]],
-                 dependentPieces: Array[Set[Int]],
+                 dependentPieces: Array[Int], // Each Int is representation of 32 Boolean values for each pieceId
                  pieces: Array[Piece], // Index is pieceId
                  isWhitesTurn: Boolean,
                  white: PlayerState,
@@ -79,28 +79,36 @@ case class Board(squares: Array[Option[Int]],
     val newPieces = pieces.clone()
     val newDependentPieces = dependentPieces.clone()
 
-    val allAffectedPieceIds = dependentPieces(fromSquare) ++ dependentPieces(toSquare) // should always contain piece.id too
+    val allAffectedPieceIds = BitSet.unionSets(dependentPieces(fromSquare), dependentPieces(toSquare)) // should always contain piece.id too
 
-    for (pieceId <- allAffectedPieceIds) {
-      val oldPiece = pieces(pieceId)
-      removePieceFromDependentPieces(oldPiece, newDependentPieces)
-      val updatedPiece = if (pieceId == piece.id) {
-        Piece.fromOldPiece(piece, toX, toY, newSquares)
-      } else {
-        Piece.fromOldPiece(oldPiece, piece.x, piece.y, newSquares)
+    for (pieceId <- 0 to 31) {
+      if (BitSet.isPieceIdInSet(pieceId, allAffectedPieceIds)) {
+        val oldPiece = pieces(pieceId)
+        removePieceFromDependentPieces(oldPiece, newDependentPieces)
+        val updatedPiece = if (pieceId == piece.id) {
+          Piece.fromOldPiece(piece, toX, toY, newSquares)
+        } else {
+          Piece.fromOldPiece(oldPiece, piece.x, piece.y, newSquares)
+        }
+        addPieceToDependentPieces(updatedPiece, newDependentPieces)
+        newPieces(pieceId) = updatedPiece
       }
-      addPieceToDependentPieces(updatedPiece, newDependentPieces)
-      newPieces(pieceId) = updatedPiece
     }
     eatenPiece.foreach(eaten => removePieceFromDependentPieces(eaten, newDependentPieces))
 
     (newPieces, newDependentPieces)
   }
-  private def removePieceFromDependentPieces(piece: Piece, depPieces: Array[Set[Int]]) =
-    piece.dependentSquares.foreach(s => depPieces(s.y * 8 + s.x) -= piece.id)
+  private def removePieceFromDependentPieces(piece: Piece, depPieces: Array[Int]) =
+    piece.dependentSquares.foreach { s =>
+      val i = s.y * 8 + s.x
+      depPieces(i) = BitSet.removePieceIdFromSet(piece.id, depPieces(i))
+    }
 
-  private def addPieceToDependentPieces(piece: Piece, depPieces: Array[Set[Int]]) =
-    piece.dependentSquares.foreach(s => depPieces(s.y * 8 + s.x) += piece.id)
+  private def addPieceToDependentPieces(piece: Piece, depPieces: Array[Int]) =
+    piece.dependentSquares.foreach { s =>
+      val i = s.y * 8 + s.x
+      depPieces(i) = BitSet.addPieceIdToSet(piece.id, depPieces(i))
+    }
 
   private def newPlayer(oldPlayer: PlayerState, eatenPiece: Option[Piece]) = {
     eatenPiece.filter(_.isWhite == oldPlayer.isWhite).map { eaten =>
@@ -189,11 +197,11 @@ object Board {
       pieces(pieceId) = Piece.fromOldPiece(p, p.x, p.y, squares)
     }
 
-    val dependentPieces: Array[Set[Int]] = Array.fill(64)(Set[Int]())
+    val dependentPieces: Array[Int] = Array.fill(64)(0)
     for {
       pieceId <- whitePieces ++ blackPieces
       square <- pieces(pieceId).dependentSquares
-    } dependentPieces(square.y * 8 + square.x) = dependentPieces(square.y * 8 + square.x) + pieceId
+    } dependentPieces(square.y * 8 + square.x) = BitSet.addPieceIdToSet(pieceId, dependentPieces(square.y * 8 + square.x))
 
     Board(
       squares = squares,
