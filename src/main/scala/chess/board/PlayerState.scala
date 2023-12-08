@@ -12,7 +12,10 @@ case class PlayerState(isWhite: Boolean,
 
   def movePiece(piece: Piece, updatedPiece: Piece): PlayerState = {
     val newPieces = updatedPiece::pieces.filterNot(_ eq piece)
-    this.copy(pieces = newPieces)
+    this.copy(
+      pieces = newPieces,
+      score = score - piece.value + piece.value
+    )
   }
 
   def king: Piece =

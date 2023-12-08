@@ -8,8 +8,12 @@ case class Pawn(override val square: Int,
 
   override val value = 1
 
-  override def move(square: Int): Piece =
-    this.copy(square = square)
+  override def move(toSquare: Int): Piece = {
+    if ((isWhite && toSquare < 8) || (!isWhite && square > 55)) {
+      // For only support promoting to Queen
+      Queen(toSquare, isWhite)
+    } else this.copy(square = toSquare)
+  }
 
   override def nextMoves(board: Board): List[Int] = {
     val fromX = square % 8
