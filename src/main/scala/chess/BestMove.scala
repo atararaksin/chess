@@ -1,6 +1,7 @@
 package chess
 
 import chess.board.Board
+import chess.piece.Piece
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -75,6 +76,20 @@ class BestMove {
     else games.minBy(g => g._2.score * 1000 + g._2.moves.length)._2
   }
 
+  private def getNextMoveSummaries(board: Board): List[(Piece, Int, Board, Boolean)] = {
+    var moves: List[(Piece, Int, Board, Boolean)] = Nil
+    for (pieceAndMoves <- board.nextMoves) {
+      val piece = pieceAndMoves._1
+      for (square <- pieceAndMoves._2) {
+        val newBoard = board.movePiece(piece, square)
+        if (!newBoard.isPreviousPlayerInCheck) {
+          moves ::= (piece, square, newBoard, board.getPiece(square).isDefined)
+        }
+      }
+    }
+    moves
+  }
+
   def bestGame(board: Board, depth: Int, asWhite: Boolean, targetDepth: Int, depthHardLimit: Int): Game = {
     cachedGame(board.encoding, depth) match {
       case Some(cachedGame) =>
@@ -87,12 +102,7 @@ class BestMove {
         } else if (depth >= depthHardLimit) {
           gameEnd(board, asWhite) //TODO This could be bad: if (isCurrentPlayerInCheck(board))
         } else {
-          val moves = board.nextMoves.flatMap { case (piece, square) =>
-            val newBoard = board.movePiece(piece, square)
-            if (!newBoard.isPreviousPlayerInCheck) {
-              Some((piece, square, board.movePiece(piece, square), board.getPiece(square).isDefined))
-            } else None
-          }
+          val moves = getNextMoveSummaries(board)
 
           if (moves.isEmpty) mate(board, asWhite) // No legal moves. We already checked for stalemate above, so has to be mate.
           else {

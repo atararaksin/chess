@@ -69,8 +69,8 @@ object MoveHelpers {
     varAcc
   }
 
-  def isSquareUnderAttack(square: Int, availableOpponentMoves: List[(Piece, Int)]): Boolean = {
-    availableOpponentMoves.exists(s => s._2 == square)
+  def isSquareUnderAttack(square: Int, availableOpponentMoves: List[(Piece, List[Int])]): Boolean = {
+    availableOpponentMoves.exists(_._2.contains(square))
   }
 
   def encodeMove(piece: Piece, targetSquare: Int): String = {
