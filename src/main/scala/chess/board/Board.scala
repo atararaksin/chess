@@ -67,7 +67,7 @@ case class Board(squares: Array[Option[Piece]],
 
   def print() = {
     val chars = for {
-      square <- 0 to 31
+      square <- 0 to 63
     } yield getPiece(square).map(_.reprChar).getOrElse('.')
 
     val board = chars.grouped(8).map(_.mkString("  ")).mkString("\n")
