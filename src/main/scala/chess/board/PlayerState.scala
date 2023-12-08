@@ -14,7 +14,7 @@ case class PlayerState(isWhite: Boolean,
     val newPieces = updatedPiece::pieces.filterNot(_ eq piece)
     this.copy(
       pieces = newPieces,
-      score = score - piece.value + piece.value
+      score = score - piece.value + updatedPiece.value
     )
   }
 

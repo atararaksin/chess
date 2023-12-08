@@ -5,8 +5,7 @@ import board.Board
 import scala.annotation.tailrec
 
 object Main {
-  var fen = "4k3/8/3p4/2n1q1r1/8/3PPPN1/2QB4/4KB2 w - - 0 1"
-//  var fen = "4k3/8/3p4/2n1q1r1/5P2/3PP1N1/2QB4/4KB2 b - - 0 1"
+  var fen = "4k3/8/3p4/2n1q1r1/8/3PPPN1/2QB4/4KB2 b - - 0 1"
 //  var fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
   def main(args: Array[String]): Unit = {
