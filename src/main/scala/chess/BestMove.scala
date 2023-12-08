@@ -104,7 +104,7 @@ class BestMove {
               (board, gameEnd(board, asWhite)) :: Nil
             } else Nil
 
-            val movesPar = if (depth >= parallelUntilDepth) filteredMoves else filteredMoves //TODO
+            val movesPar = if (depth >= parallelUntilDepth) filteredMoves else filteredMoves.par
             val games = movesPar.map { case (piece, square, newBoard, _) =>
               totalMovesMade.incrementAndGet()
               val game = bestGame(newBoard, depth + 1, asWhite, targetDepth, depthHardLimit)
