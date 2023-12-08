@@ -3,19 +3,20 @@ package chess.piece
 import chess.board.Board
 
 abstract class Piece {
-  def char: Char
-  def square: Int
-  def value: Int
-  def isWhite: Boolean
+  val char: Char
+  val square: Int
+  val value: Int
+  val isWhite: Boolean
+  val maxMoves: Int // Max # of moves a piece of this type can theoretically have on a board
   def reprChar: Char =
     if (isWhite) char.toUpper else char
 
   def move(square: Int): Piece
 
-  def nextMoves(board: Board): List[Int] =
-    List()
+  def nextMoves(board: Board): Array[Int] =
+    Array.fill(1)(-1) // -1 as EOF token
 
-  def controlledSquares(board: Board): List[Int] =
+  def controlledSquares(board: Board): Array[Int] =
     nextMoves(board)
 }
 

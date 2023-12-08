@@ -9,9 +9,11 @@ case class Bishop(override val square: Int,
 
   override val value = 3
 
+  val maxMoves = 14
+
   override def move(square: Int): Piece =
     this.copy(square = square)
 
-  override def nextMoves(board: Board): List[Int] =
+  override def nextMoves(board: Board): Array[Int] =
     MoveHelpers.diagonalMoves(board, this)
 }

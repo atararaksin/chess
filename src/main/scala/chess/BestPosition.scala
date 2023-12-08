@@ -12,7 +12,7 @@ object BestPosition {
 
     val controlledSquares = player.pieces
       .filterNot(_.isInstanceOf[King])
-      .flatMap(_.controlledSquares(board))
+      .flatMap(_.controlledSquares(board).takeWhile(s => s != -1))
 
     // 10 points for every controlled square
     // + more pints for every center square
@@ -30,7 +30,7 @@ object BestPosition {
     val underAttackScore = -4 * oppositePlayer.pieces
       .filterNot(_.isInstanceOf[King])
       .flatMap { piece =>
-        piece.nextMoves(board).flatMap(board.getPiece)
+        piece.nextMoves(board).takeWhile(s => s != -1).flatMap(board.getPiece)
       }.count(_.isWhite == asWhite)
 
     controlledSquaresScore + attackScore + underAttackScore

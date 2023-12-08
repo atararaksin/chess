@@ -20,9 +20,9 @@ case class Board(squares: Array[Option[Piece]],
     new String(chars)
   }
 
-  lazy val nextMoves: List[(Piece, List[Int])] = {
+  lazy val nextMoves: List[(Piece, Array[Int])] = {
     val player = if (isWhitesTurn) white else black
-    var piecesAndMoves: List[(Piece, List[Int])] = Nil
+    var piecesAndMoves: List[(Piece, Array[Int])] = Nil
 
     for (piece <- player.pieces) {
       val moves = piece.nextMoves(this)

@@ -9,9 +9,11 @@ case class Queen(override val square: Int,
 
   override val value = 9
 
+  val maxMoves = 28
+
   override def move(square: Int): Piece =
     this.copy(square = square)
 
-  override def nextMoves(board: Board): List[Int] =
+  override def nextMoves(board: Board): Array[Int] =
     MoveHelpers.straightAndDiagonalMoves(board, this)
 }

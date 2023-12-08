@@ -84,11 +84,17 @@ class BestMove {
     var moves: List[(Piece, Int, Board, Boolean)] = Nil
     for (pieceAndMoves <- board.nextMoves) {
       val piece = pieceAndMoves._1
-      for (square <- pieceAndMoves._2) {
+      val pieceMoves = pieceAndMoves._2
+
+      var i = 0
+      var square = pieceMoves(i)
+      while (square != -1) {
         val newBoard = board.movePiece(piece, square)
         if (!newBoard.isPreviousPlayerInCheck) {
           moves ::= (piece, square, newBoard, board.getPiece(square).isDefined)
         }
+        i += 1
+        square = pieceMoves(i)
       }
     }
     moves
