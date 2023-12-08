@@ -11,7 +11,7 @@ object MoveHelpers {
     consecutiveMoves.addConsecutiveMoves(0, 1)
     consecutiveMoves.addConsecutiveMoves(0, -1)
     consecutiveMoves.addConsecutiveMoves(1, 0)
-    consecutiveMoves.addConsecutiveMoves(1, 0)
+    consecutiveMoves.addConsecutiveMoves(-1, 0)
     consecutiveMoves.get()
   }
 
@@ -29,7 +29,7 @@ object MoveHelpers {
     consecutiveMoves.addConsecutiveMoves(0, 1)
     consecutiveMoves.addConsecutiveMoves(0, -1)
     consecutiveMoves.addConsecutiveMoves(1, 0)
-    consecutiveMoves.addConsecutiveMoves(1, 0)
+    consecutiveMoves.addConsecutiveMoves(-1, 0)
 
     consecutiveMoves.addConsecutiveMoves(1, 1)
     consecutiveMoves.addConsecutiveMoves(1, -1)
