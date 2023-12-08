@@ -1,18 +1,17 @@
 package chess.piece
 
 import chess.MoveHelpers
-import chess.board.{Board, Square}
+import chess.board.Board
 
-case class Bishop(override val x: Int,
-                  override val y: Int,
+case class Bishop(override val square: Int,
                   override val isWhite: Boolean) extends Piece {
   override val char = 'b'
 
   override val value = 3
 
-  override def move(x: Int, y: Int): Piece =
-    this.copy(x = x, y = y)
+  override def move(square: Int): Piece =
+    this.copy(square = square)
 
-  override def nextMoves(board: Board): List[Square] =
+  override def nextMoves(board: Board): List[Int] =
     MoveHelpers.diagonalMoves(board, this)
 }

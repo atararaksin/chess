@@ -20,7 +20,7 @@ case class Board(squares: Array[Option[Piece]],
     new String(chars)
   }
 
-  lazy val nextMoves: List[(Piece, Square)] = {
+  lazy val nextMoves: List[(Piece, Int)] = {
     val player = if (isWhitesTurn) white else black
     for {
       piece <- player.pieces
@@ -31,21 +31,18 @@ case class Board(squares: Array[Option[Piece]],
   lazy val isPreviousPlayerInCheck: Boolean = {
     val previousPlayer = if (isWhitesTurn) black else white
     val king = previousPlayer.king
-    MoveHelpers.isSquareUnderAttack(king.x, king.y, nextMoves)
+    MoveHelpers.isSquareUnderAttack(king.square, nextMoves)
   }
 
   lazy val isCurrentPlayerInCheck: Boolean = {
     this.copy(isWhitesTurn = !isWhitesTurn).isPreviousPlayerInCheck
   }
 
-  def getPiece(x: Int, y: Int): Option[Piece] =
-    squares(y * 8 + x)
+  def getPiece(square: Int): Option[Piece] =
+    squares(square)
 
-  def movePiece(piece: Piece, square: Square): Board = {
-    val x = square.x
-    val y = square.y
-
-    val updatedPiece = piece.move(x, y)
+  def movePiece(piece: Piece, square: Int): Board = {
+    val updatedPiece = piece.move(square)
 
     var newWhite = white
     var newBlack = black
@@ -53,15 +50,15 @@ case class Board(squares: Array[Option[Piece]],
     if (piece.isWhite) newWhite = newWhite.movePiece(piece, updatedPiece)
     else newBlack = newBlack.movePiece(piece, updatedPiece)
 
-    getPiece(x, y) match {
+    getPiece(square) match {
       case Some(other) if other.isWhite => newWhite = newWhite.removePiece(other)
       case Some(other) => newBlack = newBlack.removePiece(other)
       case None =>
     }
 
     val newSquares = squares.clone
-    newSquares(y * 8 + x) = Some(updatedPiece)
-    newSquares(piece.y * 8 + piece.x) = None
+    newSquares(square) = Some(updatedPiece)
+    newSquares(piece.square) = None
 
     this.copy(
       squares = newSquares, isWhitesTurn = !isWhitesTurn, white = newWhite, black = newBlack
@@ -70,9 +67,8 @@ case class Board(squares: Array[Option[Piece]],
 
   def print() = {
     val chars = for {
-      y <- (0 to 7).toList
-      x <- (0 to 7).toList
-    } yield getPiece(x, y).map(_.reprChar).getOrElse('.')
+      square <- 0 to 31
+    } yield getPiece(square).map(_.reprChar).getOrElse('.')
 
     val board = chars.grouped(8).map(_.mkString("  ")).mkString("\n")
 
@@ -94,7 +90,7 @@ object Board {
 
     val piecesChars = squaresRows.mkString.toCharArray.flatMap(readPieceChar)
     val squares = piecesChars.zipWithIndex.map {
-      case (Some(char), i) => Some(Piece.fromChar(char, i % 8, i / 8))
+      case (Some(char), i) => Some(Piece.fromChar(char, i))
       case (None, _) => None
     }
 

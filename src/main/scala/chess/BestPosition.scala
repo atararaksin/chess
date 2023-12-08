@@ -1,10 +1,10 @@
 package chess
 
-import chess.board.{Board, Square}
+import chess.board.Board
 import chess.piece.King
 
 object BestPosition {
-  private val centerSquares = Set(Square(3, 3), Square(3, 4), Square(4, 3), Square(4, 4))
+  private val centerSquares = Set(3 * 8 + 3, 4 * 8 + 3, 3 * 8 + 4, 4 * 8 + 4)
 
   def positionScore(board: Board, asWhite: Boolean): Int = {
     val player = if (board.isWhitesTurn) board.white else board.black
@@ -24,13 +24,13 @@ object BestPosition {
       controlledSquares.count(centerSquares(_)) * pointsForCenterSquare +
       controlledSquares.distinct.length * 3
 
-    val attackScore = 4 * controlledSquares.flatMap(square => board.getPiece(square.x, square.y))
+    val attackScore = 4 * controlledSquares.flatMap(board.getPiece)
       .count(_.isWhite != asWhite)
 
     val underAttackScore = -4 * oppositePlayer.pieces
       .filterNot(_.isInstanceOf[King])
       .flatMap { piece =>
-        piece.nextMoves(board).flatMap(square => board.getPiece(square.x, square.y))
+        piece.nextMoves(board).flatMap(board.getPiece)
       }.count(_.isWhite == asWhite)
 
     controlledSquaresScore + attackScore + underAttackScore

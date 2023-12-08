@@ -1,18 +1,17 @@
 package chess.piece
 
 import chess.MoveHelpers
-import chess.board.{Board, Square}
+import chess.board.Board
 
-case class Queen(override val x: Int,
-                 override val y: Int,
+case class Queen(override val square: Int,
                  override val isWhite: Boolean) extends Piece {
   override val char = 'q'
 
   override val value = 9
 
-  override def move(x: Int, y: Int): Piece =
-    this.copy(x = x, y = y)
+  override def move(square: Int): Piece =
+    this.copy(square = square)
 
-  override def nextMoves(board: Board): List[Square] =
+  override def nextMoves(board: Board): List[Int] =
     MoveHelpers.straightAndDiagonalMoves(board, this)
 }

@@ -90,7 +90,7 @@ class BestMove {
           val moves = board.nextMoves.flatMap { case (piece, square) =>
             val newBoard = board.movePiece(piece, square)
             if (!newBoard.isPreviousPlayerInCheck) {
-              Some((piece, square, board.movePiece(piece, square), board.getPiece(square.x, square.y).isDefined))
+              Some((piece, square, board.movePiece(piece, square), board.getPiece(square).isDefined))
             } else None
           }
 
