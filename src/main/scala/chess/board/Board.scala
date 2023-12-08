@@ -3,7 +3,9 @@ package chess.board
 import chess.MoveHelpers
 import chess.piece.Piece
 
-case class Board(squares: Array[Option[Piece]],
+case class Board(squares: Array[Option[Int]],
+                 dependentPieces: Array[Set[Int]],
+                 pieces: Array[Piece], // Index is pieceId
                  isWhitesTurn: Boolean,
                  white: PlayerState,
                  black: PlayerState) {
@@ -12,8 +14,8 @@ case class Board(squares: Array[Option[Piece]],
     val turnChar = if (isWhitesTurn) 'w' else 'b'
     val chars: Array[Char] = new Array(65)
     for (i <- 0 to 63) {
-      val piece = squares(i)
-      if (piece.isDefined) chars(i) = squares(i).get.reprChar
+      val pieceId = squares(i)
+      if (pieceId.isDefined) chars(i) = pieces(pieceId.get).reprChar
       else chars(i) = ' '
     }
     chars(64) = turnChar
@@ -23,49 +25,90 @@ case class Board(squares: Array[Option[Piece]],
   lazy val nextMoves: List[(Piece, Square)] = {
     val player = if (isWhitesTurn) white else black
     for {
-      piece <- player.pieces
-      square <- piece.nextMoves(this)
+      pieceId <- player.pieces
+      piece = pieces(pieceId)
+      square <- piece.moves
     } yield (piece, square)
   }
 
   lazy val isPreviousPlayerInCheck: Boolean = {
-    val previousPlayer = if (isWhitesTurn) black else white
-    val king = previousPlayer.king
+    val king = getKing(!isWhitesTurn)
     MoveHelpers.isSquareUnderAttack(king.x, king.y, nextMoves)
   }
 
   lazy val isCurrentPlayerInCheck: Boolean = {
-    this.copy(isWhitesTurn = !isWhitesTurn).isPreviousPlayerInCheck
+    this.copy(isWhitesTurn = !isWhitesTurn).isPreviousPlayerInCheck // TODO can we do better now?
   }
 
+  def getKing(isWhite: Boolean): Piece =
+    if (isWhite) pieces(0) else pieces(16)
+
   def getPiece(x: Int, y: Int): Option[Piece] =
-    squares(y * 8 + x)
+    squares(y * 8 + x).map(pieces)
 
   def movePiece(piece: Piece, square: Square): Board = {
-    val x = square.x
-    val y = square.y
+    val toX = square.x
+    val toY = square.y
 
-    val updatedPiece = piece.move(x, y)
+    val fromSquare = piece.y * 8 + piece.x
+    val toSquare = square.y * 8 + square.x
 
-    var newWhite = white
-    var newBlack = black
-
-    if (piece.isWhite) newWhite = newWhite.movePiece(piece, updatedPiece)
-    else newBlack = newBlack.movePiece(piece, updatedPiece)
-
-    getPiece(x, y) match {
-      case Some(other) if other.isWhite => newWhite = newWhite.removePiece(other)
-      case Some(other) => newBlack = newBlack.removePiece(other)
-      case None =>
-    }
+    val eatenPiece = getPiece(toX, toY)
 
     val newSquares = squares.clone
-    newSquares(y * 8 + x) = Some(updatedPiece)
-    newSquares(piece.y * 8 + piece.x) = None
+    newSquares(fromSquare) = None
+    newSquares(toSquare) = Some(piece.id)
+
+    val (newPieces, newDependentPieces) = calculateNewPieces(piece, eatenPiece, fromSquare, toSquare, toX, toY, newSquares)
+
+    val newWhite = newPlayer(white, eatenPiece)
+    val newBlack = newPlayer(black, eatenPiece)
 
     this.copy(
-      squares = newSquares, isWhitesTurn = !isWhitesTurn, white = newWhite, black = newBlack
+      squares = newSquares,
+      dependentPieces = newDependentPieces,
+      pieces = newPieces,
+      isWhitesTurn = !isWhitesTurn,
+      white = newWhite,
+      black = newBlack
     )
+  }
+
+  private def calculateNewPieces(piece: Piece, eatenPiece: Option[Piece], fromSquare: Int, toSquare: Int,
+                                 toX: Int, toY: Int, newSquares: Array[Option[Int]]) = {
+    val newPieces = pieces.clone()
+    val newDependentPieces = dependentPieces.clone()
+
+    val allAffectedPieceIds = dependentPieces(fromSquare) ++ dependentPieces(toSquare) // should always contain piece.id too
+
+    for (pieceId <- allAffectedPieceIds) {
+      val oldPiece = pieces(pieceId)
+      removePieceFromDependentPieces(oldPiece, newDependentPieces)
+      val updatedPiece = if (pieceId == piece.id) {
+        Piece.fromOldPiece(piece, toX, toY, newSquares)
+      } else {
+        Piece.fromOldPiece(oldPiece, piece.x, piece.y, newSquares)
+      }
+      addPieceToDependentPieces(updatedPiece, newDependentPieces)
+      newPieces(pieceId) = updatedPiece
+    }
+    eatenPiece.foreach(eaten => removePieceFromDependentPieces(eaten, newDependentPieces))
+
+    (newPieces, newDependentPieces)
+  }
+  private def removePieceFromDependentPieces(piece: Piece, depPieces: Array[Set[Int]]) =
+    piece.dependentSquares.foreach(s => depPieces(s.y * 8 + s.x) -= piece.id)
+
+  private def addPieceToDependentPieces(piece: Piece, depPieces: Array[Set[Int]]) =
+    piece.dependentSquares.foreach(s => depPieces(s.y * 8 + s.x) += piece.id)
+
+  private def newPlayer(oldPlayer: PlayerState, eatenPiece: Option[Piece]) = {
+    eatenPiece.filter(_.isWhite == oldPlayer.isWhite).map { eaten =>
+      oldPlayer.copy(
+        pieces = oldPlayer.pieces.filterNot(_ == eaten.id),
+        score = oldPlayer.score - eaten.value
+      )
+    }.getOrElse(oldPlayer)
   }
 
   def print() = {
@@ -93,12 +136,36 @@ object Board {
       else List(Some(char))
 
     val piecesChars = squaresRows.mkString.toCharArray.flatMap(readPieceChar)
-    val squares = piecesChars.zipWithIndex.map {
-      case (Some(char), i) => Some(Piece.fromChar(char, i % 8, i / 8))
+    val allPieces = piecesChars.zipWithIndex.flatMap {
+      case (Some(char), i) => Some((char, i))
       case (None, _) => None
+    }.sortBy { p =>
+      // Let kings be always index 0 and 1 for quick discoverability,
+      // and the rest be ordered by is White
+      if (p._1 == 'k') 0 else 1
     }
 
-    if (squares.size != 64) sys.error(s"FEN contained ${squares.size} squares instead of 64")
+    val squares = Array.fill[Option[Int]](64)(None)
+    val pieces = new Array[Piece](32)
+    var whitePieces = List[Int]()
+    var blackPieces = List[Int]()
+    var whiteId = 0
+    var blackId = 16
+    allPieces.foreach { case (char, square) =>
+      if (char.isUpper) { // White
+        val piece = Piece.fromChar(whiteId, char, square % 8, square / 8)
+        pieces(whiteId) = piece
+        squares(piece.y * 8 + piece.x) = Some(whiteId)
+        whitePieces ::= whiteId
+        whiteId += 1
+      } else {
+        val piece = Piece.fromChar(blackId, char, square % 8, square / 8)
+        pieces(blackId) = piece
+        squares(piece.y * 8 + piece.x) = Some(blackId)
+        blackPieces ::= blackId
+        blackId += 1
+      }
+    }
 
     val isWhitesTurn = turn.equals("w")
     val canWhiteCastleK = castle.contains('K')
@@ -106,22 +173,32 @@ object Board {
     val canBlackCastleK = castle.contains('k')
     val canBlackCastleQ = castle.contains('q')
 
-    val whitePieces = squares.flatten.filter(_.isWhite).toList
-    val blackPieces = squares.flatten.filterNot(_.isWhite).toList
-
     val white = PlayerState(
       isWhite = true, whitePieces,
       canCastleK = canWhiteCastleK, canCastleQ = canWhiteCastleQ,
-      score = whitePieces.map(_.value).sum
+      score = whitePieces.map(pieces(_).value).sum
     )
     val black = PlayerState(
       isWhite = false, blackPieces,
       canCastleK = canBlackCastleK, canCastleQ = canBlackCastleQ,
-      score = blackPieces.map(_.value).sum
+      score = blackPieces.map(pieces(_).value).sum
     )
+
+    (whitePieces ++ blackPieces).foreach { pieceId =>
+      val p = pieces(pieceId)
+      pieces(pieceId) = Piece.fromOldPiece(p, p.x, p.y, squares)
+    }
+
+    val dependentPieces: Array[Set[Int]] = Array.fill(64)(Set[Int]())
+    for {
+      pieceId <- whitePieces ++ blackPieces
+      square <- pieces(pieceId).dependentSquares
+    } dependentPieces(square.y * 8 + square.x) = dependentPieces(square.y * 8 + square.x) + pieceId
 
     Board(
       squares = squares,
+      dependentPieces = dependentPieces,
+      pieces = pieces,
       isWhitesTurn = isWhitesTurn,
       white = white,
       black = black

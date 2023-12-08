@@ -65,11 +65,12 @@ object Main {
   def printNextMoves(board: Board): Unit = {
     val player = if (board.isWhitesTurn) board.white else board.black
 
-    player.pieces.foreach { piece =>
-      piece.nextMoves(board).foreach { square =>
-        MoveHelpers.encodeMove(piece, square)
+    player.pieces.map(board.pieces).foreach { piece =>
+      piece.moves.foreach { square =>
+        println(MoveHelpers.encodeMove(piece, square))
         val newBoard = board.movePiece(piece, square)
         newBoard.print()
+        println("")
         println("")
       }
       println("")

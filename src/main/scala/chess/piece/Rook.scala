@@ -1,19 +1,22 @@
 package chess.piece
 
 import chess.MoveHelpers
-import chess.board.{Board, Square}
+import chess.board.Square
 
-case class Rook(override val x: Int,
+case class Rook(override val id: Int,
+                override val x: Int,
                 override val y: Int,
-                override val isWhite: Boolean) extends Piece {
+                override val isWhite: Boolean,
+                override val dependentSquares: List[Square],
+                override val moves: List[Square]) extends Piece {
   override val char = 'r'
 
   override val value = 5
 
-  override def move(x: Int, y: Int): Piece =
-    this.copy(x = x, y = y)
+  override val behavior = Rook
+}
 
-  override def nextMoves(board: Board): List[Square] =
-    MoveHelpers.straightMoves(board, this)
-
+object Rook extends Behavior {
+  override def calculateDependentSquares(x: Int, y: Int, isWhite: Boolean, boardSquares: Array[Option[Int]]): List[Square] =
+    MoveHelpers.straightDependentSquares(boardSquares, x, y)
 }

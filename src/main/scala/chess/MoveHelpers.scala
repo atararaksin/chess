@@ -1,48 +1,47 @@
 package chess
 
-import chess.board.{Board, Square}
+import chess.board.Square
 import chess.piece.Piece
 
-import scala.annotation.tailrec
 
 object MoveHelpers {
   private val xChars = "abcdefgh".toCharArray
 
-  def straightMoves(board: Board, piece: Piece): List[Square] = {
-    var moves = consecutiveMoves(board, piece, Nil, 0, 1)
-    moves = consecutiveMoves(board, piece, moves, 0, -1)
-    moves = consecutiveMoves(board, piece, moves, 1, 0)
-    moves = consecutiveMoves(board, piece, moves, -1, 0)
+  def straightDependentSquares(boardSquares: Array[Option[Int]], fromX: Int, fromY: Int): List[Square] = {
+    var moves = consecutiveDependentSquares(boardSquares, fromX, fromY, Nil, 0, 1)
+    moves = consecutiveDependentSquares(boardSquares, fromX, fromY, moves, 0, -1)
+    moves = consecutiveDependentSquares(boardSquares, fromX, fromY, moves, 1, 0)
+    moves = consecutiveDependentSquares(boardSquares, fromX, fromY, moves, -1, 0)
     moves
   }
 
-  def diagonalMoves(board: Board, piece: Piece): List[Square] = {
-    var moves = consecutiveMoves(board, piece, Nil, 1, 1)
-    moves = consecutiveMoves(board, piece, moves, 1, -1)
-    moves = consecutiveMoves(board, piece, moves, -1, 1)
-    moves = consecutiveMoves(board, piece, moves, -1, -1)
+  def diagonalDependentSquares(boardSquares: Array[Option[Int]], fromX: Int, fromY: Int): List[Square] = {
+    var moves = consecutiveDependentSquares(boardSquares, fromX, fromY, Nil, 1, 1)
+    moves = consecutiveDependentSquares(boardSquares, fromX, fromY, moves, 1, -1)
+    moves = consecutiveDependentSquares(boardSquares, fromX, fromY, moves, -1, 1)
+    moves = consecutiveDependentSquares(boardSquares, fromX, fromY, moves, -1, -1)
     moves
   }
 
-  def straightAndDiagonalMoves(board: Board, piece: Piece): List[Square] = {
-    var moves = consecutiveMoves(board, piece, Nil, 0, 1)
-    moves = consecutiveMoves(board, piece, moves, 0, -1)
-    moves = consecutiveMoves(board, piece, moves, 1, 0)
-    moves = consecutiveMoves(board, piece, moves, -1, 0)
+  def straightAndDiagonalDependentSquares(boardSquares: Array[Option[Int]], fromX: Int, fromY: Int): List[Square] = {
+    var moves = consecutiveDependentSquares(boardSquares, fromX, fromY, Nil, 0, 1)
+    moves = consecutiveDependentSquares(boardSquares, fromX, fromY, moves, 0, -1)
+    moves = consecutiveDependentSquares(boardSquares, fromX, fromY, moves, 1, 0)
+    moves = consecutiveDependentSquares(boardSquares, fromX, fromY, moves, -1, 0)
 
-    moves = consecutiveMoves(board, piece, moves, 1, 1)
-    moves = consecutiveMoves(board, piece, moves, 1, -1)
-    moves = consecutiveMoves(board, piece, moves, -1, 1)
-    moves = consecutiveMoves(board, piece, moves, -1, -1)
+    moves = consecutiveDependentSquares(boardSquares, fromX, fromY, moves, 1, 1)
+    moves = consecutiveDependentSquares(boardSquares, fromX, fromY, moves, 1, -1)
+    moves = consecutiveDependentSquares(boardSquares, fromX, fromY, moves, -1, 1)
+    moves = consecutiveDependentSquares(boardSquares, fromX, fromY, moves, -1, -1)
     moves
   }
 
-  private def consecutiveMoves(board: Board,
-                               piece: Piece,
-                               acc: List[Square],
-                               xInc: Int, yInc: Int): List[Square] = {
-    var x = piece.x
-    var y = piece.y
+  private def consecutiveDependentSquares(boardSquares: Array[Option[Int]],
+                                          fromX: Int, fromY: Int,
+                                          acc: List[Square],
+                                          xInc: Int, yInc: Int): List[Square] = {
+    var x = fromX
+    var y = fromY
 
     var shouldStop = false
 
@@ -54,12 +53,9 @@ object MoveHelpers {
       if (x < 0 || y < 0 || x > 7 || y > 7) {
         shouldStop = true
       } else {
-        val other = board.getPiece(x, y)
-        if (other.isDefined) {
+        varAcc ::= Square(x, y)
+        if (boardSquares(y * 8 + x).isDefined) {
           shouldStop = true
-          if (other.get.isWhite != piece.isWhite) varAcc ::= Square(x, y)
-        } else {
-          varAcc ::= Square(x, y)
         }
       }
     } while (!shouldStop)

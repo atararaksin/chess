@@ -1,8 +1,9 @@
 package chess.piece
 
-import chess.board.{Board, Square}
+import chess.board.Square
 
 abstract class Piece {
+  def id: Int
   def char: Char
   def x: Int
   def y: Int
@@ -11,26 +12,39 @@ abstract class Piece {
   def reprChar: Char =
     if (isWhite) char.toUpper else char
 
-  def move(x: Int, y: Int): Piece
+  def behavior: Behavior
 
-  def nextMoves(board: Board): List[Square] =
+  def dependentSquares: List[Square] =
+    List()
+  def moves: List[Square] =
     List()
 
-  def controlledSquares(board: Board): List[Square] =
-    nextMoves(board)
 }
 
-object Piece {
-  def fromChar(char: Char, x: Int, y: Int): Piece = {
+object Piece extends Behavior {
+  def fromChar(id: Int, char: Char, x: Int, y: Int): Piece = {
     val isWhite = char.isUpper
     val lowerChar = char.toLower
 
-    if (lowerChar == 'p') Pawn(x, y, isWhite)
-    else if (lowerChar == 'r') Rook(x, y, isWhite)
-    else if (lowerChar == 'n') Knight(x, y, isWhite)
-    else if (lowerChar == 'b') Bishop(x, y, isWhite)
-    else if (lowerChar == 'q') Queen(x, y, isWhite)
-    else if (lowerChar == 'k') King(x, y, isWhite)
+    if (lowerChar == 'p') Pawn(id, x, y, isWhite, List(), List())
+    else if (lowerChar == 'r') Rook(id, x, y, isWhite, List(), List())
+    else if (lowerChar == 'n') Knight(id, x, y, isWhite, List(), List())
+    else if (lowerChar == 'b') Bishop(id, x, y, isWhite, List(), List())
+    else if (lowerChar == 'q') Queen(id, x, y, isWhite, List(), List())
+    else if (lowerChar == 'k') King(id, x, y, isWhite, List(), List())
     else sys.error(s"Unknown piece character: $char")
+  }
+
+  def fromOldPiece(oldPiece: Piece, toX: Int, toY: Int, newBoardSquares: Array[Option[Int]]): Piece = {
+    val depSquares = oldPiece.behavior.calculateDependentSquares(toX, toY, oldPiece.isWhite, newBoardSquares)
+    val moveSquares = oldPiece.behavior.calculateMoveSquares(toX, toY, oldPiece.isWhite, depSquares, newBoardSquares)
+
+    if (oldPiece.isInstanceOf[Pawn]) Pawn(oldPiece.id, toX, toY, oldPiece.isWhite, depSquares, moveSquares)
+    else if (oldPiece.isInstanceOf[Queen]) Queen(oldPiece.id, toX, toY, oldPiece.isWhite, depSquares, moveSquares)
+    else if (oldPiece.isInstanceOf[Bishop]) Bishop(oldPiece.id, toX, toY, oldPiece.isWhite, depSquares, moveSquares)
+    else if (oldPiece.isInstanceOf[Rook]) Rook(oldPiece.id, toX, toY, oldPiece.isWhite, depSquares, moveSquares)
+    else if (oldPiece.isInstanceOf[Knight]) Knight(oldPiece.id, toX, toY, oldPiece.isWhite, depSquares, moveSquares)
+    else if (oldPiece.isInstanceOf[King]) King(oldPiece.id, toX, toY, oldPiece.isWhite, depSquares, moveSquares)
+    else sys.error(s"Unknown piece: $oldPiece")
   }
 }

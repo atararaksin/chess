@@ -1,18 +1,22 @@
 package chess.piece
 
 import chess.MoveHelpers
-import chess.board.{Board, Square}
+import chess.board.Square
 
-case class Bishop(override val x: Int,
+case class Bishop(override val id: Int,
+                  override val x: Int,
                   override val y: Int,
-                  override val isWhite: Boolean) extends Piece {
+                  override val isWhite: Boolean,
+                  override val dependentSquares: List[Square],
+                  override val moves: List[Square]) extends Piece {
   override val char = 'b'
 
   override val value = 3
 
-  override def move(x: Int, y: Int): Piece =
-    this.copy(x = x, y = y)
+  override val behavior = Bishop
+}
 
-  override def nextMoves(board: Board): List[Square] =
-    MoveHelpers.diagonalMoves(board, this)
+object Bishop extends Behavior {
+  override def calculateDependentSquares(x: Int, y: Int, isWhite: Boolean, boardSquares: Array[Option[Int]]): List[Square] =
+    MoveHelpers.diagonalDependentSquares(boardSquares, x, y)
 }

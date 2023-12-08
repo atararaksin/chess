@@ -1,18 +1,22 @@
 package chess.piece
 
 import chess.MoveHelpers
-import chess.board.{Board, Square}
+import chess.board.Square
 
-case class Queen(override val x: Int,
+case class Queen(override val id: Int,
+                 override val x: Int,
                  override val y: Int,
-                 override val isWhite: Boolean) extends Piece {
+                 override val isWhite: Boolean,
+                 override val dependentSquares: List[Square],
+                 override val moves: List[Square]) extends Piece {
   override val char = 'q'
 
   override val value = 9
 
-  override def move(x: Int, y: Int): Piece =
-    this.copy(x = x, y = y)
+  override val behavior = Queen
+}
 
-  override def nextMoves(board: Board): List[Square] =
-    MoveHelpers.straightAndDiagonalMoves(board, this)
+object Queen extends Behavior {
+  override def calculateDependentSquares(x: Int, y: Int, isWhite: Boolean, boardSquares: Array[Option[Int]]): List[Square] =
+    MoveHelpers.straightAndDiagonalDependentSquares(boardSquares, x, y)
 }

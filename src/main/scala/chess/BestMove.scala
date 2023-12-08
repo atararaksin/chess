@@ -89,8 +89,9 @@ class BestMove {
         } else {
           val moves = board.nextMoves.flatMap { case (piece, square) =>
             val newBoard = board.movePiece(piece, square)
+
             if (!newBoard.isPreviousPlayerInCheck) {
-              Some((piece, square, board.movePiece(piece, square), board.getPiece(square.x, square.y).isDefined))
+              Some((piece, square, newBoard, board.getPiece(square.x, square.y).isDefined))
             } else None
           }
 
@@ -103,7 +104,7 @@ class BestMove {
               (board, gameEnd(board, asWhite)) :: Nil
             } else Nil
 
-            val movesPar = if (depth >= parallelUntilDepth) filteredMoves else filteredMoves.par
+            val movesPar = if (depth >= parallelUntilDepth) filteredMoves else filteredMoves //TODO
             val games = movesPar.map { case (piece, square, newBoard, _) =>
               totalMovesMade.incrementAndGet()
               val game = bestGame(newBoard, depth + 1, asWhite, targetDepth, depthHardLimit)

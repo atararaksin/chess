@@ -2,17 +2,21 @@ package chess.piece
 
 import chess.board.{Board, Square}
 
-case class Pawn(override val x: Int,
+case class Pawn(override val id: Int,
+                override val x: Int,
                 override val y: Int,
-                override val isWhite: Boolean) extends Piece {
+                override val isWhite: Boolean,
+                override val dependentSquares: List[Square],
+                override val moves: List[Square]) extends Piece {
   override val char = 'p'
 
   override val value = 1
 
-  override def move(x: Int, y: Int): Piece =
-    this.copy(x = x, y = y)
+  override val behavior = Pawn
+}
 
-  override def nextMoves(board: Board): List[Square] = {
+object Pawn extends Behavior {
+  override def calculateDependentSquares(x: Int, y: Int, isWhite: Boolean, boardSquares: Array[Option[Int]]): List[Square] = {
     val fromX = x
     val fromY = y
 
@@ -21,47 +25,53 @@ case class Pawn(override val x: Int,
       val yInc = if (isWhite) -1 else 1
       val isStartPos = (isWhite && fromY == 6) || (!isWhite && fromY == 1)
 
-      var moves: List[Square] = Nil
+      var squares: List[Square] = Nil
       val yForward = fromY + yInc
-      if (board.getPiece(fromX, yForward).isEmpty) {
-        moves ::= Square(fromX, yForward)
-        if (isStartPos && board.getPiece(fromX, yForward + yInc).isEmpty) {
-          moves ::= Square(fromX, yForward + yInc)
-        }
+      squares ::= Square(fromX, yForward)
+      if (isStartPos && boardSquares(yForward * 8 + fromX).isEmpty) {
+        squares ::= Square(fromX, yForward + yInc)
       }
       val xLeft = fromX - 1
-      if (xLeft >= 0 && board.getPiece(xLeft, yForward).exists(_.isWhite != isWhite)) {
-        moves ::= Square(xLeft, yForward)
+      if (xLeft >= 0) {
+        squares ::= Square(xLeft, yForward)
       }
       val xRight = fromX + 1
-      if (xRight <= 7 && board.getPiece(xRight, yForward).exists(_.isWhite != isWhite)) {
-        moves ::= Square(xRight, yForward)
+      if (xRight <= 7) {
+        squares ::= Square(xRight, yForward)
       }
 
-      moves
+      squares
     }
   }
 
-  override def controlledSquares(board: Board): List[Square] = {
-    val fromX = x
-    val fromY = y
+  override def calculateMoveSquares(x: Int, y: Int, isWhite: Boolean,
+                                    dependentSquares: List[Square],
+                                    boardSquares: Array[Option[Int]]): List[Square] = {
+    dependentSquares.filter { s =>
+      (s.x == x && boardSquares(s.y * 8 + s.x).isEmpty) ||
+        boardSquares(s.y * 8 + s.x).exists(isWhite ^ _ < 16)
+    }
+  }
 
-    if (isWhite && fromY == 0 || !isWhite && fromY == 7) Nil
+  override def calculateControlledSquares(piece: Piece, board: Board): List[Square] = {
+    val fromX = piece.x
+    val fromY = piece.y
+
+    if (piece.isWhite && fromY == 0 || !piece.isWhite && fromY == 7) Nil
     else {
-      var moves: List[Square] = Nil
-      val yInc = if (isWhite) -1 else 1
+      var squares: List[Square] = Nil
+      val yInc = if (piece.isWhite) -1 else 1
       val yForward = fromY + yInc
       val xLeft = fromX - 1
-      if (xLeft >= 0 && board.getPiece(xLeft, yForward).exists(_.isWhite != isWhite)) {
-        moves ::= Square(xLeft, yForward)
+      if (xLeft >= 0 && board.getPiece(xLeft, yForward).exists(_.isWhite != piece.isWhite)) {
+        squares ::= Square(xLeft, yForward)
       }
       val xRight = fromX + 1
-      if (xRight <= 7 && board.getPiece(xRight, yForward).exists(_.isWhite != isWhite)) {
-        moves ::= Square(xRight, yForward)
+      if (xRight <= 7 && board.getPiece(xRight, yForward).exists(_.isWhite != piece.isWhite)) {
+        squares ::= Square(xRight, yForward)
       }
 
-      moves
+      squares
     }
   }
-
 }
