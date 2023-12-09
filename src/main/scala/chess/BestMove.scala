@@ -104,7 +104,7 @@ class BestMove {
     cachedGame(board.encoding, depth) match {
       case Some(cachedGame) =>
         shortcircuitedGames.incrementAndGet()
-        cachedGame.game
+        cachedGame.game.copy(scoreAchievedAt = cachedGame.game.scoreAchievedAt + depth)
       case None => {
         val game = if (board.nextMoves.isEmpty) { // End of game, could be either mate or stalemate
           if (board.isCurrentPlayerInCheck) mate(board, depth, asWhite)
