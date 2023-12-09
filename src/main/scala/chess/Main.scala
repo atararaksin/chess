@@ -8,8 +8,11 @@ object Main {
   var fen = "4k3/8/3p4/2n1q1r1/8/3PPPN1/2QB4/4KB2 b - - 0 1"
 //  var fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
+  var maxMillis = 3000
+
   def main(args: Array[String]): Unit = {
     if (args.length > 0) fen = args(0)
+    if (args.length > 1) maxMillis = args(1).toInt
 
     val board = Board.loadFen(fen)
 
@@ -37,7 +40,7 @@ object Main {
       println(s"Got result in ${bestMove.elapsedMillis} millis: ${game.moves.head}")
 
       if (targetDepth > 9) game
-      else if (bestMove.elapsedMillis > 3000) game
+      else if (bestMove.elapsedMillis > maxMillis) game
       else {
         val newTargetDepth = targetDepth + 1
         tryWithDepth(newTargetDepth)
